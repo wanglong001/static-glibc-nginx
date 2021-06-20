@@ -29,9 +29,9 @@ src: nginx.tar.gz
 	mv nginx-*/ $@
 	touch $@
 
-#src/.PATCHED: src/src/core/nginx.c
-	#(cd src && patch -p1 < ../static-glibc-nginx.patch)
-#	touch $@
+src/.PATCHED: src/src/core/nginx.c
+#	(cd src && patch -p1 < ../static-glibc-nginx.patch)
+	touch $@
 
 src/src/core/nginx.c: src
 
@@ -48,16 +48,10 @@ musl.tar.gz:
 
 
 musl/.FOLDER: musl.tar.gz
-	echo "musl======"
-	echo $?
-	echo $(@D)
-	echo $@
-	echo "musl======"
 	tar -x -z -f $?
 	mv musl*/ $(@D)
 	touch $@
-	cd $(@D)
-	./configure && make install
+	cd $(@D) && ./configure && make install
 
 CC = /usr/local/musl/bin/musl-gcc
 
