@@ -8,28 +8,30 @@ NGINX_TAR_GZ = http://nginx.org/download/nginx-1.19.10.tar.gz
 OPENSSL_TAR_GZ = https://www.openssl.org/source/openssl-1.1.1j.tar.gz
 PCRE_TAR_GZ = https://ftp.pcre.org/pub/pcre/pcre-8.44.tar.gz
 ZLIB_TAR_GZ = http://zlib.net/zlib-1.2.11.tar.gz
+MUSL_TAR_GZ = https://musl.libc.org/releases/musl-1.2.2.tar.gz
 
 WGET = wget --no-use-server-timestamps
 
 all: nginx/.FOLDER
 
 clean:
-	rm -rf .*-patched src pcre openssl nginx zlib
+	rm -rf .*-patched src pcre openssl nginx zlib musl
 
 cleaner: clean
-	rm -f nginx.tar.gz pcre.tar.gz openssl.tar.gz zlib.tar.gz
+	rm -f nginx.tar.gz pcre.tar.gz openssl.tar.gz zlib.tar.gz musl.tar.gz
 
 nginx.tar.gz:
 	$(WGET) -O $@ $(NGINX_TAR_GZ)
+
 
 src: nginx.tar.gz
 	tar -x -z -f $?
 	mv nginx-*/ $@
 	touch $@
 
-src/.PATCHED: src/src/core/nginx.c
-	(cd src && patch -p1 < ../static-glibc-nginx.patch)
-	touch $@
+#src/.PATCHED: src/src/core/nginx.c
+	#(cd src && patch -p1 < ../static-glibc-nginx.patch)
+#	touch $@
 
 src/src/core/nginx.c: src
 
@@ -40,6 +42,24 @@ pcre/.FOLDER: pcre.tar.gz
 	tar -x -z -f $?
 	mv pcre*/ $(@D)
 	touch $@
+
+musl.tar.gz:
+	$(WGET) -O $@ $(MUSL_TAR_GZ)
+
+
+musl/.FOLDER: musl.tar.gz
+	echo "musl======"
+	echo $?
+	echo $(@D)
+	echo $@
+	echo "musl======"
+	tar -x -z -f $?
+	mv musl*/ $(@D)
+	touch $@
+	cd $(@D)
+	./configure && make install
+
+CC = /usr/local/musl/bin/musl-gcc
 
 openssl.tar.gz:
 	$(WGET) -O $@ $(OPENSSL_TAR_GZ)
@@ -57,7 +77,7 @@ zlib/.FOLDER: zlib.tar.gz
 	mv zlib-*/ $(@D)
 	touch $@
 
-src/Makefile: openssl/.FOLDER pcre/.FOLDER src/.PATCHED zlib/.FOLDER
+src/Makefile: openssl/.FOLDER pcre/.FOLDER src/.PATCHED zlib/.FOLDER musl/.FOLDER
 	(cd src && \
 	./configure \
 		--conf-path=nginx.conf \
